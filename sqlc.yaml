@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - schema: "internal/sql/migration"
+    queries: "internal/sql/queries"
+    engine: "postgresql"
+    gen:
+      go:
+        out: "internal/sql"
+        emit_json_tags: true
+        emit_interface: false
