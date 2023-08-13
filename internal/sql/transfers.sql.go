@@ -7,7 +7,8 @@ package sql
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createTransfer = `-- name: CreateTransfer :one
@@ -23,7 +24,7 @@ type CreateTransferParams struct {
 }
 
 func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, createTransfer, arg.FromAccountID, arg.ToAccountID, arg.Amount)
+	row := q.db.QueryRow(ctx, createTransfer, arg.FromAccountID, arg.ToAccountID, arg.Amount)
 	var i Transfer
 	err := row.Scan(
 		&i.ID,
@@ -42,11 +43,11 @@ WHERE id = $1
 `
 
 func (q *Queries) DeleteTransferById(ctx context.Context, id int64) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteTransferById, id)
+	result, err := q.db.Exec(ctx, deleteTransferById, id)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	return result.RowsAffected(), nil
 }
 
 const getAllTransfers = `-- name: GetAllTransfers :many
@@ -56,12 +57,12 @@ ORDER BY created_at
 `
 
 func (q *Queries) GetAllTransfers(ctx context.Context) ([]Transfer, error) {
-	rows, err := q.db.QueryContext(ctx, getAllTransfers)
+	rows, err := q.db.Query(ctx, getAllTransfers)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Transfer
+	items := []Transfer{}
 	for rows.Next() {
 		var i Transfer
 		if err := rows.Scan(
@@ -74,9 +75,6 @@ func (q *Queries) GetAllTransfers(ctx context.Context) ([]Transfer, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -97,12 +95,12 @@ type GetAllTransfersPaginatedParams struct {
 }
 
 func (q *Queries) GetAllTransfersPaginated(ctx context.Context, arg GetAllTransfersPaginatedParams) ([]Transfer, error) {
-	rows, err := q.db.QueryContext(ctx, getAllTransfersPaginated, arg.Offset, arg.Limit)
+	rows, err := q.db.Query(ctx, getAllTransfersPaginated, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Transfer
+	items := []Transfer{}
 	for rows.Next() {
 		var i Transfer
 		if err := rows.Scan(
@@ -115,9 +113,6 @@ func (q *Queries) GetAllTransfersPaginated(ctx context.Context, arg GetAllTransf
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -133,7 +128,7 @@ LIMIT 1
 `
 
 func (q *Queries) GetTransferById(ctx context.Context, id int64) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, getTransferById, id)
+	row := q.db.QueryRow(ctx, getTransferById, id)
 	var i Transfer
 	err := row.Scan(
 		&i.ID,
@@ -155,14 +150,14 @@ RETURNING id, from_account_id, to_account_id, amount, created_at
 `
 
 type UpdateTransferByIdParams struct {
-	ID            int64         `json:"id"`
-	FromAccountID sql.NullInt64 `json:"from_account_id"`
-	ToAccountID   sql.NullInt64 `json:"to_account_id"`
-	Amount        sql.NullInt64 `json:"amount"`
+	ID            int64       `json:"id"`
+	FromAccountID pgtype.Int8 `json:"from_account_id"`
+	ToAccountID   pgtype.Int8 `json:"to_account_id"`
+	Amount        pgtype.Int8 `json:"amount"`
 }
 
 func (q *Queries) UpdateTransferById(ctx context.Context, arg UpdateTransferByIdParams) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, updateTransferById,
+	row := q.db.QueryRow(ctx, updateTransferById,
 		arg.ID,
 		arg.FromAccountID,
 		arg.ToAccountID,

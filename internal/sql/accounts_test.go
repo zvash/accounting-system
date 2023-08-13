@@ -2,7 +2,7 @@ package sql
 
 import (
 	"context"
-	"database/sql"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"github.com/zvash/accounting-system/internal/util"
 	"testing"
@@ -14,7 +14,7 @@ func createRandomAccount(t *testing.T) Account {
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
-	account, err := testQueries.CreateAccount(context.Background(), args)
+	account, err := testStore.CreateAccount(context.Background(), args)
 	require.NoError(t, err)
 	require.NotEmpty(t, account)
 
@@ -28,7 +28,7 @@ func createRandomAccount(t *testing.T) Account {
 }
 
 func getRandomlyCreatedAccountById(t *testing.T, id int64) Account {
-	account, err := testQueries.GetAccountById(context.Background(), id)
+	account, err := testStore.GetAccountById(context.Background(), id)
 	require.NoError(t, err)
 	require.NotEmpty(t, account)
 
@@ -41,7 +41,7 @@ func TestCreateAccount(t *testing.T) {
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
-	account, err := testQueries.CreateAccount(context.Background(), args)
+	account, err := testStore.CreateAccount(context.Background(), args)
 	require.NoError(t, err)
 	require.NotEmpty(t, account)
 
@@ -55,7 +55,7 @@ func TestCreateAccount(t *testing.T) {
 
 func TestGetAccountById(t *testing.T) {
 	account1 := createRandomAccount(t)
-	account2, err := testQueries.GetAccountById(context.Background(), account1.ID)
+	account2, err := testStore.GetAccountById(context.Background(), account1.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, account2)
 
@@ -70,12 +70,10 @@ func TestUpdateAccountById(t *testing.T) {
 	account1 := createRandomAccount(t)
 	owner := util.RandomOwner()
 	args := UpdateAccountByIdParams{
-		ID:       account1.ID,
-		Owner:    sql.NullString{String: owner, Valid: true},
-		Balance:  sql.NullInt64{},
-		Currency: sql.NullString{},
+		ID:    account1.ID,
+		Owner: pgtype.Text{String: owner, Valid: true},
 	}
-	affected, err := testQueries.UpdateAccountById(context.Background(), args)
+	affected, err := testStore.UpdateAccountById(context.Background(), args)
 	require.NoError(t, err)
 	require.NotZero(t, affected)
 
@@ -90,13 +88,13 @@ func TestUpdateAccountById(t *testing.T) {
 
 func TestDeleteAccountById(t *testing.T) {
 	account := createRandomAccount(t)
-	affected, err := testQueries.DeleteAccountById(context.Background(), account.ID)
+	affected, err := testStore.DeleteAccountById(context.Background(), account.ID)
 	require.NoError(t, err)
 	require.NotZero(t, affected)
 
-	account, err = testQueries.GetAccountById(context.Background(), account.ID)
+	account, err = testStore.GetAccountById(context.Background(), account.ID)
 	require.Error(t, err)
-	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.EqualError(t, err, ErrRecordNotFound.Error())
 	require.Empty(t, account)
 }
 
@@ -108,7 +106,7 @@ func TestGetAllAccountsPaginated(t *testing.T) {
 		Offset: 5,
 		Limit:  5,
 	}
-	accounts, err := testQueries.GetAllAccountsPaginated(context.Background(), args)
+	accounts, err := testStore.GetAllAccountsPaginated(context.Background(), args)
 	require.NoError(t, err)
 	require.Len(t, accounts, 5)
 	for _, account := range accounts {

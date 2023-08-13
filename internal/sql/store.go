@@ -2,36 +2,47 @@ package sql
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Store struct {
-	*Queries
-	db *sql.DB
+type Store interface {
+	Querier
+	TransferTransaction(ctx context.Context, arg TransferTransactionParams) (TransferTransactionResult, error)
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
-		db:      db,
-		Queries: New(db),
+type DBStore struct {
+	connPool *pgxpool.Pool
+	*Queries
+}
+
+func NewStore(connPool *pgxpool.Pool) *DBStore {
+	return &DBStore{
+		connPool: connPool,
+		Queries:  New(connPool),
 	}
 }
 
-func (store *Store) executeTransaction(ctx context.Context, fn func(queries *Queries) error) error {
-	tx, err := store.db.BeginTx(ctx, nil)
+func (store *DBStore) executeTransaction(ctx context.Context, fn func(queries *Queries) error) error {
+	//transactionOptions := sql.TxOptions{
+	//	Isolation: sql.LevelReadCommitted,
+	//}
+	tx, err := store.connPool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	q := New(tx)
 	err = fn(q)
 	if err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
+		if rbErr := tx.Rollback(ctx); rbErr != nil {
 			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
 		}
 		return err
 	}
-	return tx.Commit()
+	return tx.Commit(ctx)
 }
 
 type TransferTransactionParams struct {
@@ -48,7 +59,7 @@ type TransferTransactionResult struct {
 	ToEntry     Entry    `json:"to_entry"`
 }
 
-func (store *Store) TransferTransaction(ctx context.Context, arg TransferTransactionParams) (TransferTransactionResult, error) {
+func (store *DBStore) TransferTransaction(ctx context.Context, arg TransferTransactionParams) (TransferTransactionResult, error) {
 	var result TransferTransactionResult
 	err := store.executeTransaction(ctx, func(queries *Queries) error {
 		var err error
@@ -76,8 +87,29 @@ func (store *Store) TransferTransaction(ctx context.Context, arg TransferTransac
 			return err
 		}
 
-		//TODO: update accounts' balance
-
+		accountsToUpdate, err := queries.GetTwoAccountsInvolvedInTransfer(ctx, GetTwoAccountsInvolvedInTransferParams{
+			FromAccount: arg.FromAccountID,
+			ToAccount:   arg.ToAccountID,
+		})
+		if err != nil {
+			return err
+		}
+		if len(accountsToUpdate) != 2 {
+			return errors.New("exactly two distinct accounts are required for a successful transfer")
+		}
+		fmt.Println(accountsToUpdate)
+		accountIdToAccountMap := make(map[int64]Account)
+		for _, account := range accountsToUpdate {
+			accountIdToAccountMap[account.ID] = account
+		}
+		result.FromAccount, err = queries.UpdateAccountById(ctx, UpdateAccountByIdParams{
+			ID:      arg.FromAccountID,
+			Balance: pgtype.Int8{Int64: accountIdToAccountMap[arg.FromAccountID].Balance - arg.Amount, Valid: true},
+		})
+		result.ToAccount, err = queries.UpdateAccountById(ctx, UpdateAccountByIdParams{
+			ID:      arg.ToAccountID,
+			Balance: pgtype.Int8{Int64: accountIdToAccountMap[arg.ToAccountID].Balance + arg.Amount, Valid: true},
+		})
 		return nil
 	})
 

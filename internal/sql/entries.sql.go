@@ -7,7 +7,8 @@ package sql
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createEntry = `-- name: CreateEntry :one
@@ -22,7 +23,7 @@ type CreateEntryParams struct {
 }
 
 func (q *Queries) CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, createEntry, arg.AccountID, arg.Amount)
+	row := q.db.QueryRow(ctx, createEntry, arg.AccountID, arg.Amount)
 	var i Entry
 	err := row.Scan(
 		&i.ID,
@@ -40,11 +41,11 @@ WHERE id = $1
 `
 
 func (q *Queries) DeleteEntryById(ctx context.Context, id int64) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteEntryById, id)
+	result, err := q.db.Exec(ctx, deleteEntryById, id)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	return result.RowsAffected(), nil
 }
 
 const getAllEntries = `-- name: GetAllEntries :many
@@ -54,12 +55,12 @@ ORDER BY created_at
 `
 
 func (q *Queries) GetAllEntries(ctx context.Context) ([]Entry, error) {
-	rows, err := q.db.QueryContext(ctx, getAllEntries)
+	rows, err := q.db.Query(ctx, getAllEntries)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Entry
+	items := []Entry{}
 	for rows.Next() {
 		var i Entry
 		if err := rows.Scan(
@@ -71,9 +72,6 @@ func (q *Queries) GetAllEntries(ctx context.Context) ([]Entry, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -94,12 +92,12 @@ type GetAllEntriesPaginatedParams struct {
 }
 
 func (q *Queries) GetAllEntriesPaginated(ctx context.Context, arg GetAllEntriesPaginatedParams) ([]Entry, error) {
-	rows, err := q.db.QueryContext(ctx, getAllEntriesPaginated, arg.Offset, arg.Limit)
+	rows, err := q.db.Query(ctx, getAllEntriesPaginated, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Entry
+	items := []Entry{}
 	for rows.Next() {
 		var i Entry
 		if err := rows.Scan(
@@ -111,9 +109,6 @@ func (q *Queries) GetAllEntriesPaginated(ctx context.Context, arg GetAllEntriesP
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -129,7 +124,7 @@ LIMIT 1
 `
 
 func (q *Queries) GetEntryById(ctx context.Context, id int64) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, getEntryById, id)
+	row := q.db.QueryRow(ctx, getEntryById, id)
 	var i Entry
 	err := row.Scan(
 		&i.ID,
@@ -149,13 +144,13 @@ RETURNING id, account_id, amount, created_at
 `
 
 type UpdateEntryByIdParams struct {
-	ID        int64         `json:"id"`
-	AccountID sql.NullInt64 `json:"account_id"`
-	Amount    sql.NullInt64 `json:"amount"`
+	ID        int64       `json:"id"`
+	AccountID pgtype.Int8 `json:"account_id"`
+	Amount    pgtype.Int8 `json:"amount"`
 }
 
 func (q *Queries) UpdateEntryById(ctx context.Context, arg UpdateEntryByIdParams) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, updateEntryById, arg.ID, arg.AccountID, arg.Amount)
+	row := q.db.QueryRow(ctx, updateEntryById, arg.ID, arg.AccountID, arg.Amount)
 	var i Entry
 	err := row.Scan(
 		&i.ID,

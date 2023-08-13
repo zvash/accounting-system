@@ -7,8 +7,34 @@ package sql
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const addToAccountBalanceById = `-- name: AddToAccountBalanceById :one
+UPDATE accounts
+SET balance = balance + $1
+WHERE id = $2
+RETURNING id, owner, balance, currency, created_at
+`
+
+type AddToAccountBalanceByIdParams struct {
+	Amount int64 `json:"amount"`
+	ID     int64 `json:"id"`
+}
+
+func (q *Queries) AddToAccountBalanceById(ctx context.Context, arg AddToAccountBalanceByIdParams) (Account, error) {
+	row := q.db.QueryRow(ctx, addToAccountBalanceById, arg.Amount, arg.ID)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
 
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO accounts (owner, balance, currency)
@@ -23,7 +49,7 @@ type CreateAccountParams struct {
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, createAccount, arg.Owner, arg.Balance, arg.Currency)
+	row := q.db.QueryRow(ctx, createAccount, arg.Owner, arg.Balance, arg.Currency)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -42,11 +68,11 @@ WHERE id = $1
 `
 
 func (q *Queries) DeleteAccountById(ctx context.Context, id int64) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteAccountById, id)
+	result, err := q.db.Exec(ctx, deleteAccountById, id)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	return result.RowsAffected(), nil
 }
 
 const getAccountById = `-- name: GetAccountById :one
@@ -57,7 +83,27 @@ LIMIT 1
 `
 
 func (q *Queries) GetAccountById(ctx context.Context, id int64) (Account, error) {
-	row := q.db.QueryRowContext(ctx, getAccountById, id)
+	row := q.db.QueryRow(ctx, getAccountById, id)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getAccountByIdForUpdate = `-- name: GetAccountByIdForUpdate :one
+SELECT id, owner, balance, currency, created_at
+FROM accounts
+WHERE id = $1
+LIMIT 1 FOR NO KEY UPDATE
+`
+
+func (q *Queries) GetAccountByIdForUpdate(ctx context.Context, id int64) (Account, error) {
+	row := q.db.QueryRow(ctx, getAccountByIdForUpdate, id)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -76,12 +122,12 @@ ORDER BY created_at
 `
 
 func (q *Queries) GetAllAccounts(ctx context.Context) ([]Account, error) {
-	rows, err := q.db.QueryContext(ctx, getAllAccounts)
+	rows, err := q.db.Query(ctx, getAllAccounts)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Account
+	items := []Account{}
 	for rows.Next() {
 		var i Account
 		if err := rows.Scan(
@@ -94,9 +140,6 @@ func (q *Queries) GetAllAccounts(ctx context.Context) ([]Account, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -117,12 +160,12 @@ type GetAllAccountsPaginatedParams struct {
 }
 
 func (q *Queries) GetAllAccountsPaginated(ctx context.Context, arg GetAllAccountsPaginatedParams) ([]Account, error) {
-	rows, err := q.db.QueryContext(ctx, getAllAccountsPaginated, arg.Offset, arg.Limit)
+	rows, err := q.db.Query(ctx, getAllAccountsPaginated, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Account
+	items := []Account{}
 	for rows.Next() {
 		var i Account
 		if err := rows.Scan(
@@ -136,8 +179,45 @@ func (q *Queries) GetAllAccountsPaginated(ctx context.Context, arg GetAllAccount
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	return items, nil
+}
+
+const getTwoAccountsInvolvedInTransfer = `-- name: GetTwoAccountsInvolvedInTransfer :many
+SELECT id, owner, balance, currency, created_at
+FROM accounts
+WHERE id = $1
+   OR id = $2
+ORDER BY id
+LIMIT 2 FOR NO KEY UPDATE
+`
+
+type GetTwoAccountsInvolvedInTransferParams struct {
+	FromAccount int64 `json:"from_account"`
+	ToAccount   int64 `json:"to_account"`
+}
+
+func (q *Queries) GetTwoAccountsInvolvedInTransfer(ctx context.Context, arg GetTwoAccountsInvolvedInTransferParams) ([]Account, error) {
+	rows, err := q.db.Query(ctx, getTwoAccountsInvolvedInTransfer, arg.FromAccount, arg.ToAccount)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Account{}
+	for rows.Next() {
+		var i Account
+		if err := rows.Scan(
+			&i.ID,
+			&i.Owner,
+			&i.Balance,
+			&i.Currency,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -145,28 +225,53 @@ func (q *Queries) GetAllAccountsPaginated(ctx context.Context, arg GetAllAccount
 	return items, nil
 }
 
-const updateAccountById = `-- name: UpdateAccountById :one
+const updateAccountBalanceById = `-- name: UpdateAccountBalanceById :one
 UPDATE accounts
-SET owner    = coalesce($2, owner),
-    balance  = coalesce($3, balance),
-    currency = coalesce($4, currency)
+SET balance = $2
 WHERE id = $1
 RETURNING id, owner, balance, currency, created_at
 `
 
+type UpdateAccountBalanceByIdParams struct {
+	ID      int64 `json:"id"`
+	Balance int64 `json:"balance"`
+}
+
+func (q *Queries) UpdateAccountBalanceById(ctx context.Context, arg UpdateAccountBalanceByIdParams) (Account, error) {
+	row := q.db.QueryRow(ctx, updateAccountBalanceById, arg.ID, arg.Balance)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateAccountById = `-- name: UpdateAccountById :one
+UPDATE accounts
+SET owner    = COALESCE($1::varchar, owner),
+    balance  = COALESCE($2::bigint, balance),
+    currency = COALESCE($3::varchar, currency)
+WHERE id = $4::bigint
+RETURNING id, owner, balance, currency, created_at
+`
+
 type UpdateAccountByIdParams struct {
-	ID       int64          `json:"id"`
-	Owner    sql.NullString `json:"owner"`
-	Balance  sql.NullInt64  `json:"balance"`
-	Currency sql.NullString `json:"currency"`
+	Owner    pgtype.Text `json:"owner"`
+	Balance  pgtype.Int8 `json:"balance"`
+	Currency pgtype.Text `json:"currency"`
+	ID       int64       `json:"id"`
 }
 
 func (q *Queries) UpdateAccountById(ctx context.Context, arg UpdateAccountByIdParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, updateAccountById,
-		arg.ID,
+	row := q.db.QueryRow(ctx, updateAccountById,
 		arg.Owner,
 		arg.Balance,
 		arg.Currency,
+		arg.ID,
 	)
 	var i Account
 	err := row.Scan(
