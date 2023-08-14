@@ -27,9 +27,6 @@ func NewStore(connPool *pgxpool.Pool) *DBStore {
 }
 
 func (store *DBStore) executeTransaction(ctx context.Context, fn func(queries *Queries) error) error {
-	//transactionOptions := sql.TxOptions{
-	//	Isolation: sql.LevelReadCommitted,
-	//}
 	tx, err := store.connPool.Begin(ctx)
 	if err != nil {
 		return err
