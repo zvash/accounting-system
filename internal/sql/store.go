@@ -97,7 +97,6 @@ func (store *DBStore) TransferTransaction(ctx context.Context, arg TransferTrans
 		if len(accountsToUpdate) != 2 {
 			return errors.New("exactly two distinct accounts are required for a successful transfer")
 		}
-		fmt.Println(accountsToUpdate)
 		accountIdToAccountMap := make(map[int64]Account)
 		for _, account := range accountsToUpdate {
 			accountIdToAccountMap[account.ID] = account

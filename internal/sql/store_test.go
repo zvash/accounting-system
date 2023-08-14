@@ -2,7 +2,6 @@ package sql
 
 import (
 	"context"
-	"fmt"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -105,8 +104,6 @@ func TestTransferTransaction(t *testing.T) {
 func TestTransferTransactionDeadlock(t *testing.T) {
 	account1 := createRandomAccount(t)
 	account2 := createRandomAccount(t)
-	fmt.Println(">> before:", account1.Balance, account2.Balance)
-
 	n := 10
 	amount := int64(10)
 	errs := make(chan error)
@@ -143,7 +140,6 @@ func TestTransferTransactionDeadlock(t *testing.T) {
 	updatedAccount2, err := testStore.GetAccountById(context.Background(), account2.ID)
 	require.NoError(t, err)
 
-	fmt.Println(">> after:", updatedAccount1.Balance, updatedAccount2.Balance)
 	require.Equal(t, account1.Balance, updatedAccount1.Balance)
 	require.Equal(t, account2.Balance, updatedAccount2.Balance)
 }

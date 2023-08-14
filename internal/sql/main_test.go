@@ -11,7 +11,7 @@ import (
 
 const (
 	dbDriver = "postgres"
-	dbSource = "postgres://root:123@127.0.0.1:6543/simple_bank?sslmode=disable&pool_max_conns=32&pool_min_conns=10"
+	dbSource = "postgres://root:123@127.0.0.1:5432/simple_bank?sslmode=disable&pool_max_conns=32&pool_min_conns=10"
 )
 
 var testStore Store
