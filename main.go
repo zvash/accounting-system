@@ -6,22 +6,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zvash/accounting-system/internal/api"
 	"github.com/zvash/accounting-system/internal/sql"
+	"github.com/zvash/accounting-system/internal/util"
 	"log"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	serverAddress = "0.0.0.0:8080"
-	dbSource      = "postgres://root:123@127.0.0.1:5432/simple_bank?sslmode=disable&pool_max_conns=32&pool_min_conns=10"
-)
-
 func main() {
-	server := api.NewServer(createDBConnectionPool())
-	log.Fatal(server.Start(serverAddress))
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("cannot load config:", err)
+	}
+	server := api.NewServer(createDBConnectionPool(config.DBSource))
+	log.Fatal(server.Start(config.HTTPServerAddress))
 }
 
-func createDBConnectionPool() *sql.DBStore {
+func createDBConnectionPool(dbSource string) *sql.DBStore {
 	connPool, err := pgxpool.New(context.Background(), dbSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
