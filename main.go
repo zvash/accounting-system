@@ -21,7 +21,7 @@ func main() {
 	log.Fatal(server.Start(config.HTTPServerAddress))
 }
 
-func createDBConnectionPool(dbSource string) *sql.DBStore {
+func createDBConnectionPool(dbSource string) sql.Store {
 	connPool, err := pgxpool.New(context.Background(), dbSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)

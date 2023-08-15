@@ -25,4 +25,7 @@ test:
 server:
 	go run main.go
 
-.PHONY: postgres createdb dropdb migrateup migratedown mr sqlc test server
+mock:
+	mockgen -build_flags=--mod=mod -package mockdb --destination internal/sql/mock/store.go github.com/zvash/accounting-system/internal/sql Store
+
+.PHONY: postgres createdb dropdb migrateup migratedown mr sqlc test server mock

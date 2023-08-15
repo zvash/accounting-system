@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"github.com/gofiber/fiber/v2"
 	"github.com/zvash/accounting-system/internal/sql"
 	"strings"
@@ -69,9 +70,15 @@ func (server *Server) getAccount(ctx *fiber.Ctx) error {
 	}
 	account, err := server.db.GetAccountById(ctx.Context(), req.ID)
 	if err != nil {
+		if errors.Is(err, sql.ErrRecordNotFound) {
+			return &fiber.Error{
+				Code:    fiber.StatusNotFound,
+				Message: "Record was not found.",
+			}
+		}
 		return &fiber.Error{
-			Code:    fiber.StatusNotFound,
-			Message: "Record was not found.",
+			Code:    fiber.StatusInternalServerError,
+			Message: "Internal server error!",
 		}
 	}
 	err = ctx.JSON(account)

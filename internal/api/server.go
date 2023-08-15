@@ -12,12 +12,12 @@ type GlobalErrorHandlerResp struct {
 }
 
 type Server struct {
-	db        *sql.DBStore
+	db        sql.Store
 	router    *fiber.App
 	validator *XValidator
 }
 
-func NewServer(db *sql.DBStore) *Server {
+func NewServer(db sql.Store) *Server {
 	requestValidator := &XValidator{validator: validate}
 	server := &Server{db: db}
 	router := fiber.New(fiber.Config{
