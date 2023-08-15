@@ -69,7 +69,7 @@ func TestGetAccountAPI(t *testing.T) {
 					Times(0)
 			},
 			checkResponse: func(t *testing.T, resp *http.Response) {
-				require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+				require.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
 			},
 		},
 	}

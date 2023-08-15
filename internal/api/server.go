@@ -18,7 +18,7 @@ type Server struct {
 }
 
 func NewServer(db sql.Store) *Server {
-	requestValidator := &XValidator{validator: validate}
+	requestValidator := NewValidator()
 	server := &Server{db: db}
 	router := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -37,6 +37,8 @@ func NewServer(db sql.Store) *Server {
 	router.Post("/accounts", server.createAccount)
 	router.Get("/accounts/:id", server.getAccount)
 	router.Get("/accounts", server.listAccounts)
+
+	router.Post("/transfers", server.createTransfer)
 
 	server.router = router
 	server.validator = requestValidator

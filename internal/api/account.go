@@ -9,7 +9,7 @@ import (
 
 type createAccountRequest struct {
 	Owner    string `validate:"required"`
-	Currency string `validate:"required,oneof=EUR CAD USD"`
+	Currency string `validate:"required,currency"`
 }
 
 type getAccountRequest struct {
@@ -26,14 +26,14 @@ func (server *Server) createAccount(ctx *fiber.Ctx) error {
 	err := ctx.BodyParser(&req)
 	if err != nil {
 		return &fiber.Error{
-			Code:    fiber.ErrBadRequest.Code,
+			Code:    fiber.StatusBadRequest,
 			Message: "there is an error in the type of provided variables!",
 		}
 	}
 	if errs := server.validator.Validate(req); errs != nil {
 		errorsBag := server.validator.makeErrorBag(errs)
 		return &fiber.Error{
-			Code:    fiber.ErrBadRequest.Code,
+			Code:    fiber.StatusUnprocessableEntity,
 			Message: strings.Join(errorsBag, " and "),
 		}
 	}
@@ -64,7 +64,7 @@ func (server *Server) getAccount(ctx *fiber.Ctx) error {
 	if errs := server.validator.Validate(req); errs != nil {
 		errorsBag := server.validator.makeErrorBag(errs)
 		return &fiber.Error{
-			Code:    fiber.ErrBadRequest.Code,
+			Code:    fiber.StatusUnprocessableEntity,
 			Message: strings.Join(errorsBag, " and "),
 		}
 	}

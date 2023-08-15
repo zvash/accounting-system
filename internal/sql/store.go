@@ -9,6 +9,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type InsufficientFundsError struct {
+}
+
+func (err InsufficientFundsError) Error() string {
+	return "insufficient funds"
+}
+
 type Store interface {
 	Querier
 	TransferTransaction(ctx context.Context, arg TransferTransactionParams) (TransferTransactionResult, error)
@@ -97,6 +104,10 @@ func (store *DBStore) TransferTransaction(ctx context.Context, arg TransferTrans
 		accountIdToAccountMap := make(map[int64]Account)
 		for _, account := range accountsToUpdate {
 			accountIdToAccountMap[account.ID] = account
+		}
+		if accountIdToAccountMap[arg.FromAccountID].Balance < arg.Amount {
+			return InsufficientFundsError{}
+
 		}
 		result.FromAccount, err = queries.UpdateAccountById(ctx, UpdateAccountByIdParams{
 			ID:      arg.FromAccountID,

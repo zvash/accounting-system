@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"github.com/zvash/accounting-system/internal/util"
 )
 
 type (
@@ -21,6 +22,24 @@ type (
 // This is the validator instance
 // for more information see: https://github.com/go-playground/validator
 var validate = validator.New()
+
+func NewValidator() *XValidator {
+	xValidator := &XValidator{
+		validator: validate,
+	}
+	xValidator.RegisterCustomValidators()
+	return xValidator
+}
+
+func (v XValidator) RegisterCustomValidators() {
+	_ = validate.RegisterValidation("currency", func(fl validator.FieldLevel) bool {
+		if currency, ok := fl.Field().Interface().(string); ok {
+			return util.IsSupportedCurrency(currency)
+		}
+		return false
+	})
+
+}
 
 func (v XValidator) Validate(data interface{}) []ErrorResponse {
 	var validationErrors []ErrorResponse
