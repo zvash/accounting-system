@@ -40,6 +40,8 @@ func NewServer(db sql.Store) *Server {
 
 	router.Post("/transfers", server.createTransfer)
 
+	router.Post("/users", server.createUser)
+
 	server.router = router
 	server.validator = requestValidator
 	return server

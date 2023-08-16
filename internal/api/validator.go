@@ -38,7 +38,6 @@ func (v XValidator) RegisterCustomValidators() {
 		}
 		return false
 	})
-
 }
 
 func (v XValidator) Validate(data interface{}) []ErrorResponse {
