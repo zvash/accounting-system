@@ -7,14 +7,20 @@ createdb:
 dropdb:
 	docker exec -it postgres15 dropdb simple_bank
 
-migrateup:
+mu:
 	migrate -path internal/sql/migration -database "postgresql://root:123@127.0.0.1:5432/simple_bank?sslmode=disable" -verbose up
 
-migratedown:
+mu1:
+	migrate -path internal/sql/migration -database "postgresql://root:123@127.0.0.1:5432/simple_bank?sslmode=disable" -verbose up 1
+
+md:
 	migrate -path internal/sql/migration -database "postgresql://root:123@127.0.0.1:5432/simple_bank?sslmode=disable" -verbose down
 
+md1:
+	migrate -path internal/sql/migration -database "postgresql://root:123@127.0.0.1:5432/simple_bank?sslmode=disable" -verbose down 1
+
 mr:
-	make migratedown && make migrateup
+	make md && make mu
 
 sqlc:
 	sqlc generate
@@ -28,4 +34,4 @@ server:
 mock:
 	mockgen -build_flags=--mod=mod -package mockdb --destination internal/sql/mock/store.go github.com/zvash/accounting-system/internal/sql Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown mr sqlc test server mock
+.PHONY: postgres createdb dropdb mu md mr mu1 md1 sqlc test server mock
