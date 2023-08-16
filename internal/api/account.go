@@ -43,6 +43,10 @@ func (server *Server) createAccount(ctx *fiber.Ctx) error {
 		Balance:  0,
 	})
 	if err != nil {
+		errCode := sql.ErrorCode(err)
+		if errCode == sql.ForeignKeyViolation || errCode == sql.UniqueViolation {
+			return fiber.NewError(fiber.StatusForbidden, "Creating a new account with provided data is forbidden!")
+		}
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error!")
 	}
 	err = ctx.JSON(account)

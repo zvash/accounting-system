@@ -68,6 +68,9 @@ github.com/jackc/pgx/v5/pgxpool
 ## explicit; go 1.19
 github.com/jackc/puddle/v2
 github.com/jackc/puddle/v2/internal/genstack
+# github.com/jaswdr/faker v1.18.1
+## explicit; go 1.11
+github.com/jaswdr/faker
 # github.com/klauspost/compress v1.16.7
 ## explicit; go 1.18
 github.com/klauspost/compress/flate
@@ -160,6 +163,8 @@ github.com/valyala/tcplisten
 go.uber.org/mock/gomock
 # golang.org/x/crypto v0.9.0
 ## explicit; go 1.17
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/sha3
 # golang.org/x/net v0.10.0

@@ -9,8 +9,9 @@ import (
 )
 
 func createRandomAccount(t *testing.T) Account {
+	user := createRandomUser(t)
 	args := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
@@ -36,8 +37,9 @@ func getRandomlyCreatedAccountById(t *testing.T, id int64) Account {
 }
 
 func TestCreateAccount(t *testing.T) {
+	user := createRandomUser(t)
 	args := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
@@ -68,10 +70,10 @@ func TestGetAccountById(t *testing.T) {
 
 func TestUpdateAccountById(t *testing.T) {
 	account1 := createRandomAccount(t)
-	owner := util.RandomOwner()
+	balance := util.RandomMoney()
 	args := UpdateAccountByIdParams{
-		ID:    account1.ID,
-		Owner: pgtype.Text{String: owner, Valid: true},
+		ID:      account1.ID,
+		Balance: pgtype.Int8{Int64: balance, Valid: true},
 	}
 	affected, err := testStore.UpdateAccountById(context.Background(), args)
 	require.NoError(t, err)
@@ -79,9 +81,9 @@ func TestUpdateAccountById(t *testing.T) {
 
 	account2 := getRandomlyCreatedAccountById(t, account1.ID)
 	require.Equal(t, account1.ID, account2.ID)
-	require.Equal(t, owner, account2.Owner)
-	require.NotEqual(t, account1.Owner, account2.Owner)
-	require.Equal(t, account1.Balance, account2.Balance)
+	require.Equal(t, balance, account2.Balance)
+	require.NotEqual(t, account1.Balance, account2.Balance)
+	require.Equal(t, account1.Owner, account2.Owner)
 	require.Equal(t, account1.Currency, account2.Currency)
 	require.Equal(t, account1.CreatedAt, account2.CreatedAt)
 }
