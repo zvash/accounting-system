@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/zvash/accounting-system/internal/sql"
 	"strings"
+	"time"
 )
 
 type transferRequest struct {
@@ -12,6 +13,18 @@ type transferRequest struct {
 	ToAccountID   int64  `json:"to_account_id" validate:"required,min=1"`
 	Amount        int64  `json:"amount" validate:"required,gt=0"`
 	Currency      string `json:"currency" validate:"required,currency"`
+}
+
+type destinationAccount struct {
+	ID    int64  `json:"id"`
+	Owner string `json:"owner"`
+}
+
+type transferResponse struct {
+	FromAccount sql.Account        `json:"from_account"`
+	ToAccount   destinationAccount `json:"to_account"`
+	Amount      int64              `json:"amount"`
+	Date        time.Time          `json:"date"`
 }
 
 func (server *Server) createTransfer(ctx *fiber.Ctx) error {
@@ -51,7 +64,16 @@ func (server *Server) createTransfer(ctx *fiber.Ctx) error {
 		}
 		return fiber.NewError(fiber.StatusInternalServerError, "Fund transfer was unsuccessful!")
 	}
-	err = ctx.JSON(result)
+	response := transferResponse{
+		FromAccount: result.FromAccount,
+		ToAccount: destinationAccount{
+			ID:    result.ToAccount.ID,
+			Owner: result.ToAccount.Owner,
+		},
+		Amount: result.Transfer.Amount,
+		Date:   result.Transfer.CreatedAt,
+	}
+	err = ctx.JSON(response)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Error while creating the response!")
 	}
