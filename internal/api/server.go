@@ -2,8 +2,11 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/zvash/accounting-system/internal/sql"
+	"github.com/zvash/accounting-system/internal/token"
+	"github.com/zvash/accounting-system/internal/util"
 )
 
 type GlobalErrorHandlerResp struct {
@@ -12,14 +15,24 @@ type GlobalErrorHandlerResp struct {
 }
 
 type Server struct {
-	db        sql.Store
-	router    *fiber.App
-	validator *XValidator
+	config     util.Config
+	db         sql.Store
+	router     *fiber.App
+	validator  *XValidator
+	tokenMaker token.Maker
 }
 
-func NewServer(db sql.Store) *Server {
+func NewServer(config util.Config, db sql.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
 	requestValidator := NewValidator()
-	server := &Server{db: db}
+	server := &Server{
+		config:     config,
+		db:         db,
+		tokenMaker: tokenMaker,
+	}
 	router := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
@@ -44,7 +57,7 @@ func NewServer(db sql.Store) *Server {
 
 	server.router = router
 	server.validator = requestValidator
-	return server
+	return server, nil
 }
 
 func (server *Server) Start(address string) error {

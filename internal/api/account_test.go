@@ -87,7 +87,7 @@ func TestGetAccountAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			resp, err := server.router.Test(request)
 			require.NoError(t, err)
 			tc.checkResponse(t, resp)

@@ -17,7 +17,15 @@ func main() {
 	if err != nil {
 		log.Fatal("cannot load config:", err)
 	}
-	server := api.NewServer(createDBConnectionPool(config.DBSource))
+	store := createDBConnectionPool(config.DBSource)
+	createHttpServer(config, store)
+}
+
+func createHttpServer(config util.Config, store sql.Store) {
+	server, err := api.NewServer(config, store)
+	if err != nil {
+		log.Fatal("cannot create server")
+	}
 	log.Fatal(server.Start(config.HTTPServerAddress))
 }
 
