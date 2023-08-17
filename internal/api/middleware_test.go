@@ -75,7 +75,7 @@ func TestAuthMiddleware(t *testing.T) {
 			authPath := "/auth"
 			server.router.Get(
 				authPath,
-				authMiddleware(server.tokenMaker),
+				server.authMiddleware(),
 				func(ctx *fiber.Ctx) error {
 					return ctx.JSON(struct{}{})
 				},

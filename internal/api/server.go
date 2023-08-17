@@ -55,8 +55,9 @@ func (server *Server) setupRouter() {
 
 	router.Post("/users", server.createUser)
 	router.Post("/users/login", server.loginUser)
+	router.Post("/users/renew-access", server.renewAccessToken)
 
-	authGroup := router.Group("/", authMiddleware(server.tokenMaker))
+	authGroup := router.Group("/", server.authMiddleware())
 	authGroup.Post("/accounts", server.createAccount)
 	authGroup.Get("/accounts/:id", server.getAccount)
 	authGroup.Get("/accounts", server.listAccounts)

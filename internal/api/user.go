@@ -3,9 +3,11 @@ package api
 import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/zvash/accounting-system/internal/sql"
 	"github.com/zvash/accounting-system/internal/util"
 	"strings"
+	"time"
 )
 
 type createUserRequest struct {
@@ -23,9 +25,12 @@ type userResponse struct {
 }
 
 type loginUserResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	userResponse
+	SessionID             uuid.UUID    `json:"session_id"`
+	AccessToken           string       `json:"access_token"`
+	AccessTokenExpiresAt  time.Time    `json:"access_token_expires_at"`
+	RefreshToken          string       `json:"refresh_token"`
+	RefreshTokenExpiresAt time.Time    `json:"refresh_token_expires_at"`
+	User                  userResponse `json:"user"`
 }
 
 func mapUserModelToUserResponse(dbUser *sql.User) userResponse {
@@ -102,11 +107,11 @@ func (server *Server) loginUser(ctx *fiber.Ctx) error {
 		return invalidCredentials()
 	}
 
-	accessToken, _, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	accessToken, accessPayload, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error!")
 	}
-	refreshToken, _, err := server.tokenMaker.CreateToken(
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
 		server.config.RefreshTokenDuration,
 	)
@@ -114,10 +119,26 @@ func (server *Server) loginUser(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error!")
 	}
 
-	loginResponse := loginUserResponse{
+	userAgent, _ := getHeader(ctx, "User-Agent", "")
+	ipAddress := ctx.IP()
+	session, err := server.db.CreateSession(ctx.Context(), sql.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		Username:     user.Username,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		userResponse: mapUserModelToUserResponse(&user),
+		UserAgent:    userAgent,
+		ClientIp:     ipAddress,
+		IsBlocked:    false,
+		ExpiresAt:    refreshPayload.ExpiredAt,
+	})
+
+	loginResponse := loginUserResponse{
+		SessionID:             session.ID,
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  accessPayload.ExpiredAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
+		User:                  mapUserModelToUserResponse(&user),
 	}
 	if err := ctx.JSON(loginResponse); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Error while creating the response!")

@@ -35,7 +35,7 @@ func getHeader(ctx *fiber.Ctx, key string, defaultValue ...string) (string, erro
 	return "", errors.New("could not find the value for the provided key")
 }
 
-func authMiddleware(tokenMaker token.Maker) fiber.Handler {
+func (server *Server) authMiddleware() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		header, err := getHeader(ctx, authorizationHeaderKey)
 		if err != nil {
@@ -50,7 +50,7 @@ func authMiddleware(tokenMaker token.Maker) fiber.Handler {
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid authorization token type")
 		}
 		accessToken := fields[1]
-		payload, err := tokenMaker.VerifyToken(accessToken)
+		payload, err := server.tokenMaker.VerifyToken(accessToken)
 		if err != nil {
 			return fiber.NewError(fiber.StatusUnauthorized, "unauthorized")
 		}
