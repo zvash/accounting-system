@@ -33,6 +33,12 @@ func NewServer(config util.Config, db sql.Store) (*Server, error) {
 		db:         db,
 		tokenMaker: tokenMaker,
 	}
+	server.setupRouter()
+	server.validator = requestValidator
+	return server, nil
+}
+
+func (server *Server) setupRouter() {
 	router := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
@@ -47,17 +53,17 @@ func NewServer(config util.Config, db sql.Store) (*Server, error) {
 		},
 	})
 
-	router.Post("/accounts", server.createAccount)
-	router.Get("/accounts/:id", server.getAccount)
-	router.Get("/accounts", server.listAccounts)
-
-	router.Post("/transfers", server.createTransfer)
-
 	router.Post("/users", server.createUser)
+	router.Post("/users/login", server.loginUser)
+
+	authGroup := router.Group("/", authMiddleware(server.tokenMaker))
+	authGroup.Post("/accounts", server.createAccount)
+	authGroup.Get("/accounts/:id", server.getAccount)
+	authGroup.Get("/accounts", server.listAccounts)
+
+	authGroup.Post("/transfers", server.createTransfer)
 
 	server.router = router
-	server.validator = requestValidator
-	return server, nil
 }
 
 func (server *Server) Start(address string) error {

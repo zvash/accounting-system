@@ -185,6 +185,46 @@ func (q *Queries) GetAllAccountsPaginated(ctx context.Context, arg GetAllAccount
 	return items, nil
 }
 
+const getAllUserAccountsPaginated = `-- name: GetAllUserAccountsPaginated :many
+SELECT id, owner, balance, currency, created_at
+FROM accounts
+WHERE owner = $1
+ORDER BY created_at
+OFFSET $2 LIMIT $3
+`
+
+type GetAllUserAccountsPaginatedParams struct {
+	Owner  string `json:"owner"`
+	Offset int32  `json:"offset"`
+	Limit  int32  `json:"limit"`
+}
+
+func (q *Queries) GetAllUserAccountsPaginated(ctx context.Context, arg GetAllUserAccountsPaginatedParams) ([]Account, error) {
+	rows, err := q.db.Query(ctx, getAllUserAccountsPaginated, arg.Owner, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Account{}
+	for rows.Next() {
+		var i Account
+		if err := rows.Scan(
+			&i.ID,
+			&i.Owner,
+			&i.Balance,
+			&i.Currency,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTwoAccountsInvolvedInTransfer = `-- name: GetTwoAccountsInvolvedInTransfer :many
 SELECT id, owner, balance, currency, created_at
 FROM accounts
@@ -223,6 +263,31 @@ func (q *Queries) GetTwoAccountsInvolvedInTransfer(ctx context.Context, arg GetT
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUserAccountById = `-- name: GetUserAccountById :one
+SELECT id, owner, balance, currency, created_at
+FROM accounts
+WHERE owner = $1
+  AND id = $2
+`
+
+type GetUserAccountByIdParams struct {
+	Owner string `json:"owner"`
+	ID    int64  `json:"id"`
+}
+
+func (q *Queries) GetUserAccountById(ctx context.Context, arg GetUserAccountByIdParams) (Account, error) {
+	row := q.db.QueryRow(ctx, getUserAccountById, arg.Owner, arg.ID)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const updateAccountBalanceById = `-- name: UpdateAccountBalanceById :one

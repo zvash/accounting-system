@@ -8,7 +8,6 @@ import (
 )
 
 type createAccountRequest struct {
-	Owner    string `validate:"required"`
 	Currency string `validate:"required,currency"`
 }
 
@@ -38,7 +37,7 @@ func (server *Server) createAccount(ctx *fiber.Ctx) error {
 		}
 	}
 	account, err := server.db.CreateAccount(ctx.Context(), sql.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    getUsernameFromAuthPayload(ctx),
 		Currency: req.Currency,
 		Balance:  0,
 	})
@@ -72,7 +71,11 @@ func (server *Server) getAccount(ctx *fiber.Ctx) error {
 			Message: strings.Join(errorsBag, " and "),
 		}
 	}
-	account, err := server.db.GetAccountById(ctx.Context(), req.ID)
+	owner := getUsernameFromAuthPayload(ctx)
+	account, err := server.db.GetUserAccountById(ctx.Context(), sql.GetUserAccountByIdParams{
+		ID:    req.ID,
+		Owner: owner,
+	})
 	if err != nil {
 		if errors.Is(err, sql.ErrRecordNotFound) {
 			return &fiber.Error{
@@ -114,9 +117,11 @@ func (server *Server) listAccounts(ctx *fiber.Ctx) error {
 	if req.PerPage > 10 {
 		req.PerPage = 10
 	}
-	accounts, err := server.db.GetAllAccountsPaginated(ctx.Context(), sql.GetAllAccountsPaginatedParams{
+	owner := getUsernameFromAuthPayload(ctx)
+	accounts, err := server.db.GetAllUserAccountsPaginated(ctx.Context(), sql.GetAllUserAccountsPaginatedParams{
 		Offset: (req.Page - 1) * req.PerPage,
 		Limit:  req.PerPage,
+		Owner:  owner,
 	})
 	err = ctx.JSON(accounts)
 	if err != nil {

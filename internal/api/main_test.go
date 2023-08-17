@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var mainValue string
+
 func newTestServer(t *testing.T, store sql.Store) *Server {
 	config := util.Config{
 		TokenSymmetricKey:   util.RandomString(32),

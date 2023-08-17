@@ -275,6 +275,21 @@ func (mr *MockStoreMockRecorder) GetAllTransfersPaginated(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTransfersPaginated", reflect.TypeOf((*MockStore)(nil).GetAllTransfersPaginated), arg0, arg1)
 }
 
+// GetAllUserAccountsPaginated mocks base method.
+func (m *MockStore) GetAllUserAccountsPaginated(arg0 context.Context, arg1 sql.GetAllUserAccountsPaginatedParams) ([]sql.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllUserAccountsPaginated", arg0, arg1)
+	ret0, _ := ret[0].([]sql.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllUserAccountsPaginated indicates an expected call of GetAllUserAccountsPaginated.
+func (mr *MockStoreMockRecorder) GetAllUserAccountsPaginated(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUserAccountsPaginated", reflect.TypeOf((*MockStore)(nil).GetAllUserAccountsPaginated), arg0, arg1)
+}
+
 // GetEntryById mocks base method.
 func (m *MockStore) GetEntryById(arg0 context.Context, arg1 int64) (sql.Entry, error) {
 	m.ctrl.T.Helper()
@@ -318,6 +333,21 @@ func (m *MockStore) GetTwoAccountsInvolvedInTransfer(arg0 context.Context, arg1 
 func (mr *MockStoreMockRecorder) GetTwoAccountsInvolvedInTransfer(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTwoAccountsInvolvedInTransfer", reflect.TypeOf((*MockStore)(nil).GetTwoAccountsInvolvedInTransfer), arg0, arg1)
+}
+
+// GetUserAccountById mocks base method.
+func (m *MockStore) GetUserAccountById(arg0 context.Context, arg1 sql.GetUserAccountByIdParams) (sql.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserAccountById", arg0, arg1)
+	ret0, _ := ret[0].(sql.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserAccountById indicates an expected call of GetUserAccountById.
+func (mr *MockStoreMockRecorder) GetUserAccountById(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserAccountById", reflect.TypeOf((*MockStore)(nil).GetUserAccountById), arg0, arg1)
 }
 
 // GetUserByUserName mocks base method.

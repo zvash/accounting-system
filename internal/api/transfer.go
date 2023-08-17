@@ -28,7 +28,12 @@ func (server *Server) createTransfer(ctx *fiber.Ctx) error {
 		}
 	}
 
-	if _, err := server.checkIfAccountCurrencyIsAMatch(ctx, req.FromAccountID, req.Currency); err != nil {
+	owner := getUsernameFromAuthPayload(ctx)
+	fromAccount, err := server.checkIfAccountCurrencyIsAMatch(ctx, req.FromAccountID, req.Currency)
+	if fromAccount.Owner != owner {
+		return unauthorizedAccess()
+	}
+	if err != nil {
 		return err
 	}
 	if _, err := server.checkIfAccountCurrencyIsAMatch(ctx, req.ToAccountID, req.Currency); err != nil {

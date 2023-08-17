@@ -58,3 +58,16 @@ RETURNING *;
 DELETE
 FROM accounts
 WHERE id = $1;
+
+-- name: GetUserAccountById :one
+SELECT *
+FROM accounts
+WHERE owner = $1
+  AND id = $2;
+
+-- name: GetAllUserAccountsPaginated :many
+SELECT *
+FROM accounts
+WHERE owner = $1
+ORDER BY created_at
+OFFSET $2 LIMIT $3;
