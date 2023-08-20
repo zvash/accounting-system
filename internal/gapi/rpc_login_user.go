@@ -60,7 +60,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginRequest) (*pb.
 		AccessTokenExpiresAt:  timestamppb.New(accessPayload.ExpiredAt),
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: timestamppb.New(refreshPayload.ExpiredAt),
-		User:                  convertUser(user),
+		User:                  dbUserToProtobufUser(user),
 	}
 
 	return loginResponse, nil

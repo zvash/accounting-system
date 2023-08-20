@@ -32,7 +32,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		return nil, status.Errorf(codes.Internal, "error while trying to create the new user.")
 	}
 	resp := &pb.CreateUserResponse{
-		User: convertUser(user),
+		User: dbUserToProtobufUser(user),
 	}
 	return resp, nil
 }

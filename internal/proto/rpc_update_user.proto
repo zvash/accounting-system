@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/zvash/accounting-system/pb";
+
+import "user.proto";
+
+message UpdateUserRequest {
+  string username = 1;
+  optional string name = 2;
+  optional string email = 3;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}
