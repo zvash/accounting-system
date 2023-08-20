@@ -126,6 +126,21 @@ func (mr *MockStoreMockRecorder) CreateUser(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), arg0, arg1)
 }
 
+// CreateUserTransaction mocks base method.
+func (m *MockStore) CreateUserTransaction(arg0 context.Context, arg1 sql.CreateUserTransactionParams) (sql.CreateUserTransactionResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUserTransaction", arg0, arg1)
+	ret0, _ := ret[0].(sql.CreateUserTransactionResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUserTransaction indicates an expected call of CreateUserTransaction.
+func (mr *MockStoreMockRecorder) CreateUserTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserTransaction", reflect.TypeOf((*MockStore)(nil).CreateUserTransaction), arg0, arg1)
+}
+
 // DeleteAccountById mocks base method.
 func (m *MockStore) DeleteAccountById(arg0 context.Context, arg1 int64) (int64, error) {
 	m.ctrl.T.Helper()
@@ -469,4 +484,19 @@ func (m *MockStore) UpdateTransferById(arg0 context.Context, arg1 sql.UpdateTran
 func (mr *MockStoreMockRecorder) UpdateTransferById(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTransferById", reflect.TypeOf((*MockStore)(nil).UpdateTransferById), arg0, arg1)
+}
+
+// UpdateUserByUsername mocks base method.
+func (m *MockStore) UpdateUserByUsername(arg0 context.Context, arg1 sql.UpdateUserByUsernameParams) (sql.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserByUsername", arg0, arg1)
+	ret0, _ := ret[0].(sql.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUserByUsername indicates an expected call of UpdateUserByUsername.
+func (mr *MockStoreMockRecorder) UpdateUserByUsername(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserByUsername", reflect.TypeOf((*MockStore)(nil).UpdateUserByUsername), arg0, arg1)
 }
