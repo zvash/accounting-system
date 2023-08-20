@@ -49,8 +49,8 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 	}
 	//TODO: send verification email to user
 	log.Printf("type: %v, payload: %v, email: %v -> processed task.",
-		task.Type,
-		task.Payload,
+		task.Type(),
+		task.Payload(),
 		user.Email,
 	)
 	return nil
