@@ -7,6 +7,7 @@ import (
 	"github.com/zvash/accounting-system/internal/sql"
 	"github.com/zvash/accounting-system/internal/token"
 	"github.com/zvash/accounting-system/internal/util"
+	"github.com/zvash/accounting-system/internal/val"
 )
 
 type GlobalErrorHandlerResp struct {
@@ -18,7 +19,7 @@ type Server struct {
 	config     util.Config
 	db         sql.Store
 	router     *fiber.App
-	validator  *XValidator
+	validator  *val.XValidator
 	tokenMaker token.Maker
 }
 
@@ -27,7 +28,7 @@ func NewServer(config util.Config, db sql.Store) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create token maker: %w", err)
 	}
-	requestValidator := NewValidator()
+	requestValidator := val.NewValidator()
 	server := &Server{
 		config:     config,
 		db:         db,

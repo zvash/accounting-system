@@ -1,4 +1,4 @@
-package api
+package val
 
 import (
 	"fmt"
@@ -15,24 +15,24 @@ type (
 	}
 
 	XValidator struct {
-		validator *validator.Validate
+		Validator *validator.Validate
 	}
 )
 
-// This is the validator instance
+// Validate This is the validator instance
 // for more information see: https://github.com/go-playground/validator
-var validate = validator.New()
+var Validate = validator.New()
 
 func NewValidator() *XValidator {
 	xValidator := &XValidator{
-		validator: validate,
+		Validator: Validate,
 	}
 	xValidator.RegisterCustomValidators()
 	return xValidator
 }
 
 func (v XValidator) RegisterCustomValidators() {
-	_ = validate.RegisterValidation("currency", func(fl validator.FieldLevel) bool {
+	_ = Validate.RegisterValidation("currency", func(fl validator.FieldLevel) bool {
 		if currency, ok := fl.Field().Interface().(string); ok {
 			return util.IsSupportedCurrency(currency)
 		}
@@ -43,7 +43,7 @@ func (v XValidator) RegisterCustomValidators() {
 func (v XValidator) Validate(data interface{}) []ErrorResponse {
 	var validationErrors []ErrorResponse
 
-	errs := validate.Struct(data)
+	errs := Validate.Struct(data)
 	if errs != nil {
 		for _, err := range errs.(validator.ValidationErrors) {
 			// In this case data object is actually holding the User struct
@@ -61,7 +61,7 @@ func (v XValidator) Validate(data interface{}) []ErrorResponse {
 	return validationErrors
 }
 
-func (v XValidator) makeErrorBag(errs []ErrorResponse) []string {
+func (v XValidator) MakeErrorBag(errs []ErrorResponse) []string {
 	errorMessages := make([]string, 0)
 
 	for _, err := range errs {

@@ -12,6 +12,10 @@ import (
 )
 
 func (server *Server) LoginUser(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	dto := protobufLoginRequestToDTOLoginRequest(req)
+	if errs := server.validator.Validate(dto); errs != nil {
+		return nil, errorResponsesToStatusErrors(errs)
+	}
 	user, err := server.db.GetUserByUserName(ctx, req.GetUsername())
 	if err != nil {
 		if errors.Is(err, sql.ErrRecordNotFound) {

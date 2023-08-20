@@ -3,25 +3,13 @@ package api
 import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
+	"github.com/zvash/accounting-system/internal/dto"
 	"github.com/zvash/accounting-system/internal/sql"
 	"strings"
 )
 
-type createAccountRequest struct {
-	Currency string `validate:"required,currency"`
-}
-
-type getAccountRequest struct {
-	ID int64 `validate:"required,min=1"`
-}
-
-type getListAccountsRequest struct {
-	Page    int32 `validate:"min=1"`
-	PerPage int32 `query:"per_page" validate:"min=1"`
-}
-
 func (server *Server) createAccount(ctx *fiber.Ctx) error {
-	req := createAccountRequest{}
+	req := dto.CreateAccountRequest{}
 	err := ctx.BodyParser(&req)
 	if err != nil {
 		return &fiber.Error{
@@ -30,7 +18,7 @@ func (server *Server) createAccount(ctx *fiber.Ctx) error {
 		}
 	}
 	if errs := server.validator.Validate(req); errs != nil {
-		errorsBag := server.validator.makeErrorBag(errs)
+		errorsBag := server.validator.MakeErrorBag(errs)
 		return &fiber.Error{
 			Code:    fiber.StatusUnprocessableEntity,
 			Message: strings.Join(errorsBag, " and "),
@@ -56,7 +44,7 @@ func (server *Server) createAccount(ctx *fiber.Ctx) error {
 }
 
 func (server *Server) getAccount(ctx *fiber.Ctx) error {
-	req := getAccountRequest{}
+	req := dto.GetAccountRequest{}
 	err := ctx.ParamsParser(&req)
 	if err != nil {
 		return &fiber.Error{
@@ -65,7 +53,7 @@ func (server *Server) getAccount(ctx *fiber.Ctx) error {
 		}
 	}
 	if errs := server.validator.Validate(req); errs != nil {
-		errorsBag := server.validator.makeErrorBag(errs)
+		errorsBag := server.validator.MakeErrorBag(errs)
 		return &fiber.Error{
 			Code:    fiber.StatusUnprocessableEntity,
 			Message: strings.Join(errorsBag, " and "),
@@ -96,7 +84,7 @@ func (server *Server) getAccount(ctx *fiber.Ctx) error {
 }
 
 func (server *Server) listAccounts(ctx *fiber.Ctx) error {
-	req := getListAccountsRequest{
+	req := dto.GetListAccountsRequest{
 		Page:    1,
 		PerPage: 10,
 	}
@@ -108,7 +96,7 @@ func (server *Server) listAccounts(ctx *fiber.Ctx) error {
 		}
 	}
 	if errs := server.validator.Validate(req); errs != nil {
-		errorsBag := server.validator.makeErrorBag(errs)
+		errorsBag := server.validator.MakeErrorBag(errs)
 		return &fiber.Error{
 			Code:    fiber.ErrBadRequest.Code,
 			Message: strings.Join(errorsBag, " and "),

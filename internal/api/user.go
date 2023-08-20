@@ -4,19 +4,12 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/zvash/accounting-system/internal/dto"
 	"github.com/zvash/accounting-system/internal/sql"
 	"github.com/zvash/accounting-system/internal/util"
 	"strings"
 	"time"
 )
-
-type createUserRequest struct {
-	Username             string `json:"username" validate:"required,alphanum"`
-	Password             string `json:"password" validate:"required,min=6"`
-	PasswordConfirmation string `json:"password_confirmation" validate:"required,min=6,eqfield=Password"`
-	Name                 string `json:"name" validate:"required"`
-	Email                string `json:"email" validate:"required,email"`
-}
 
 type userResponse struct {
 	Username string `json:"username"`
@@ -42,13 +35,13 @@ func mapUserModelToUserResponse(dbUser *sql.User) userResponse {
 }
 
 func (server *Server) createUser(ctx *fiber.Ctx) error {
-	req := createUserRequest{}
+	req := dto.CreateUserRequest{}
 	err := ctx.BodyParser(&req)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "there is an error in the type of provided variables!")
 	}
 	if errs := server.validator.Validate(req); errs != nil {
-		errorsBag := server.validator.makeErrorBag(errs)
+		errorsBag := server.validator.MakeErrorBag(errs)
 		return &fiber.Error{
 			Code:    fiber.StatusUnprocessableEntity,
 			Message: strings.Join(errorsBag, " and "),
@@ -77,19 +70,14 @@ func (server *Server) createUser(ctx *fiber.Ctx) error {
 	return nil
 }
 
-type userLoginRequest struct {
-	Username string `json:"username" validate:"required,alphanum"`
-	Password string `json:"password" validate:"required,min=6"`
-}
-
 func (server *Server) loginUser(ctx *fiber.Ctx) error {
-	req := userLoginRequest{}
+	req := dto.UserLoginRequest{}
 	err := ctx.BodyParser(&req)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "there is an error in the type of provided variables!")
 	}
 	if errs := server.validator.Validate(req); errs != nil {
-		errorsBag := server.validator.makeErrorBag(errs)
+		errorsBag := server.validator.MakeErrorBag(errs)
 		return &fiber.Error{
 			Code:    fiber.StatusUnprocessableEntity,
 			Message: strings.Join(errorsBag, " and "),

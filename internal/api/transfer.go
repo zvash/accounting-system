@@ -3,17 +3,11 @@ package api
 import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
+	"github.com/zvash/accounting-system/internal/dto"
 	"github.com/zvash/accounting-system/internal/sql"
 	"strings"
 	"time"
 )
-
-type transferRequest struct {
-	FromAccountID int64  `json:"from_account_id" validate:"required,min=1"`
-	ToAccountID   int64  `json:"to_account_id" validate:"required,min=1"`
-	Amount        int64  `json:"amount" validate:"required,gt=0"`
-	Currency      string `json:"currency" validate:"required,currency"`
-}
 
 type destinationAccount struct {
 	ID    int64  `json:"id"`
@@ -28,13 +22,13 @@ type transferResponse struct {
 }
 
 func (server *Server) createTransfer(ctx *fiber.Ctx) error {
-	req := transferRequest{}
+	req := dto.TransferRequest{}
 	if err := ctx.BodyParser(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Could not parse the input data")
 	}
 
 	if errs := server.validator.Validate(req); errs != nil {
-		errorsBag := server.validator.makeErrorBag(errs)
+		errorsBag := server.validator.MakeErrorBag(errs)
 		return &fiber.Error{
 			Code:    fiber.StatusUnprocessableEntity,
 			Message: strings.Join(errorsBag, " and "),
