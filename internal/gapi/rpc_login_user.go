@@ -36,8 +36,9 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginRequest) (*pb.
 		return nil, status.Errorf(codes.Internal, "error while trying to log user in")
 	}
 
-	userAgent := ""
-	ipAddress := ""
+	metadata := server.extractMetadata(ctx)
+	userAgent := metadata.UserAgent
+	ipAddress := metadata.ClientIP
 	session, err := server.db.CreateSession(ctx, sql.CreateSessionParams{
 		ID:           refreshPayload.ID,
 		Username:     user.Username,
